@@ -1,16 +1,13 @@
 package telran.game.db.jpa;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
+import java.time.*;
+import java.util.*;
 import org.hibernate.jpa.HibernatePersistenceProvider;
 import jakarta.persistence.*;
 import jakarta.persistence.spi.PersistenceUnitInfo;
 import telran.game.MoveResult;
 import telran.game.db.BullsCowsRepository;
-import telran.game.exceptions.GameNotFoundException;
-import telran.game.exceptions.GamerNotFoundException;
+import telran.game.exceptions.*;
 
 public class BullsCowsRepositoryImpl implements BullsCowsRepository {
     EntityManager em;
@@ -29,7 +26,9 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
 
     @Override
     public void createGamer(String username, LocalDate birthDate) {
-        //TODO checking
+        if (isGamerExists(username)) {
+            throw new GamerAlreadyExistsException(username);
+        }
         var transaction = em.getTransaction();
         transaction.begin();
         try {
@@ -44,7 +43,6 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
 
     @Override
     public long createGame(String sequence) {
-        //TODO checking
         var transaction = em.getTransaction();
         transaction.begin();
         try {
@@ -60,8 +58,11 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
 
     @Override
     public List<Long> findJoinebleGames(String username) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findJoinebleGames'");
+        TypedQuery<Long> query = em.createQuery(
+                "select game.id from GameGamerEntity where gamer.username != ?1 and game.dateTime is null",
+                Long.class);
+        query.setParameter(1, username);
+        return query.getResultList();
     }
 
     @Override
@@ -98,8 +99,11 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
 
     @Override
     public List<Long> findStartebleGames(String username) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findStartebleGames'");
+        TypedQuery<Long> query = em.createQuery(
+                "select game.id from GameGamerEntity where gamer.username = ?1 and game.dateTime is null",
+                Long.class);
+        query.setParameter(1, username);
+        return query.getResultList();
     }
 
     @Override
@@ -130,23 +134,30 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
         } catch (Exception e) {
             transaction.rollback();
             throw e;
-        } 
+        }
     }
 
     @Override
     public String findWinnerGame(long gameId) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findWinnerGame'");
+        TypedQuery<String> query = em.createQuery(
+                "select gamer.username from GameGamerEntity where game.id = ?1 and isWinner",
+                String.class);
+        query.setParameter(1, gameId);
+        List<String> res = query.getResultList();
+        return res.isEmpty() ? "" : res.get(0);
     }
 
     @Override
     public List<MoveResult> findAllMovesGameGamer(String username, long gameId) {
-        //TODO checking
-        Query query = em.createQuery("select sequence, bulls, cows from MoveEntity move where game_gamer_id = (slect id from GameGamer where game_id = ?1 and gamer_id = ?2)", 
+        // TODO checking
+        Query query = em.createQuery(
+                "select sequence, bulls, cows from MoveEntity where gameGamer.game.id = ?1 and gameGamer.gamer.username = ?2",
                 MoveEntity.class);
         query.setParameter(1, gameId);
         query.setParameter(2, username);
-        return null; //query.getResultList().stream().map(arr -> new MoveResult(arr[0], arr[1], arr[2])).toList();
+        //return query.getResultList().stream().map(arr -> new MoveResult(arr[0], arr[1], arr[2])).toList();
+        //TODO transformation
+        return null;
     }
 
     @Override
@@ -168,14 +179,16 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
     }
 
     private GameGamerEntity getGameGamer(String username, long gameId) {
-        //TODO checking
         TypedQuery<GameGamerEntity> query = em.createQuery(
-                "select gameGamer from GameGamerEntity gameGamer where game_id = ?1 and gamer_id = ?2", 
-                        GameGamerEntity.class);
+                "select gameGamer from GameGamerEntity gameGamer where game_id = ?1 and gamer_id = ?2",
+                GameGamerEntity.class);
         query.setParameter(1, gameId);
         query.setParameter(2, username);
-        GameGamerEntity gameGamer = query.getResultList().get(0);
-        return gameGamer;
+        List<GameGamerEntity> res = query.getResultList();
+        if (res.isEmpty()) {
+            throw new GamerNotInGameException(username, gameId);
+        }
+        return res.get(0);
     }
 
 }
