@@ -28,5 +28,6 @@ public class MoveEntity {
         this.sequence = sequence;
     }
 
-    
+    public MoveEntity() {
+    }
 }

@@ -31,5 +31,6 @@ public class GameGamerEntity {
         this.isWinner = isWinner;
     }
 
-    
+    public GameGamerEntity() {
+    }
 }

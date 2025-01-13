@@ -29,5 +29,6 @@ public class GamerEntity {
         this.birthDate = birthDate;
     }
 
-    
+    public GamerEntity() {
+    }    
 }

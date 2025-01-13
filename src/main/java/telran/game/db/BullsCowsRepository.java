@@ -26,4 +26,8 @@ public interface BullsCowsRepository {
     public void setWinnerAndFinishGame(String username, long gameId);
 
     public List<MoveResult> findAllMovesGameGamer(String username, long gameId);
+
+    public String findSequence(long gameId);
+
+    public boolean isGameFinished(long gameId);
 }

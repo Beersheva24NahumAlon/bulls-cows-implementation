@@ -42,7 +42,14 @@ public class GameEntity {
         this.sequence = sequence;
     }
 
-    
+    public String getSequence() {
+        return sequence;
+    }
 
-    
+    public boolean isFinished() {
+        return isFinished;
+    }
+
+    public GameEntity() {
+    }
 }

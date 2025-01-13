@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface BullsCowsService {
-    public String register(String username, LocalDate birthdate);
+    public void register(String username, LocalDate birthdate);
 
     public void login(String username);
 
