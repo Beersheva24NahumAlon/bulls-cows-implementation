@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "game")
-@SuppressWarnings("unused")
 public class GameEntity {
     @Id
     @GeneratedValue

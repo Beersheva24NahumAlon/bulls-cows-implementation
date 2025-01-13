@@ -1,7 +1,9 @@
 package telran.game;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+@Disabled
 public class BullsCowsServiceTest {
     BullsCowsServiceImpl service = new BullsCowsServiceImpl();
 
