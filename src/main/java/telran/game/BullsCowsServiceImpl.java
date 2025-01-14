@@ -59,17 +59,20 @@ public class BullsCowsServiceImpl implements BullsCowsService {
     }
 
     @Override
+    public List<Long> getListPlaybleGames(String username) {
+        checkLogin(username);
+        return repo.findPlaybleGames(username);
+    }
+
+    @Override
     public List<MoveResult> makeMove(String username, long gameId, String sequence) {
         checkLogin(username);
-        if (repo.isGameFinished(gameId)) {
-            String winner = repo.findWinnerGame(gameId);
-            throw new GameAlreadyFinishedException(gameId, winner);
-        }
         String gameSequence = repo.findSequence(gameId);
         MoveResult res = calculateMove(sequence, gameSequence);
-        repo.createMove(username, gameId, sequence, res.bulls(), res.cows());
         if (res.bulls() == 4) {
-            repo.setWinnerAndFinishGame(username, gameId);
+            repo.setWinnerAndFinishGame(username, gameId, sequence, res.bulls(), res.cows());
+        } else {
+            repo.createMove(username, gameId, sequence, res.bulls(), res.cows());
         }
         return repo.findAllMovesGameGamer(username, gameId);
     }
@@ -78,11 +81,12 @@ public class BullsCowsServiceImpl implements BullsCowsService {
         int bulls = 0;
         int cows = 0;
         for (int i = 0; i < N_DIGITS; i++) {
-            if (gameSequence.indexOf(sequence.charAt(i)) > -1) {
-                cows++;
-            }
             if (gameSequence.charAt(i) == sequence.charAt(i)) {
                 bulls++;
+            } else {
+                if (gameSequence.indexOf(sequence.charAt(i)) > -1) {
+                    cows++;
+                }
             }
         }
         return new MoveResult(sequence, bulls, cows);

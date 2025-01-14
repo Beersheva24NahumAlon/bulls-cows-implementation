@@ -95,6 +95,15 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
         return query.getResultList();
     }
 
+    @Override
+    public List<Long> findPlaybleGames(String username) {
+        TypedQuery<Long> query = em.createQuery(
+                "select game.id from GameGamerEntity where gamer.username = ?1 and game.dateTime is not null",
+                Long.class);
+        query.setParameter(1, username);
+        return query.getResultList();
+    }
+
     @Override //start game
     public void setGameDateTime(String username, long gameId) {
         var transaction = em.getTransaction();
@@ -117,6 +126,7 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
         var transaction = em.getTransaction();
         transaction.begin();
         try {
+            checkGameFinished(gameId);
             GameGamerEntity gameGamer = getGameGamer(username, gameId);
             MoveEntity move = new MoveEntity(gameGamer, bulls, cows, sequence);
             em.persist(move);
@@ -127,8 +137,7 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
         }
     }
 
-    @Override
-    public String findWinnerGame(long gameId) {
+    private String findWinnerGame(long gameId) {
         TypedQuery<String> query = em.createQuery(
                 "select gamer.username from GameGamerEntity where game.id = ?1 and isWinner",
                 String.class);
@@ -149,12 +158,14 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
     }
 
     @Override
-    public void setWinnerAndFinishGame(String username, long gameId) {
+    public void setWinnerAndFinishGame(String username, long gameId, String sequence, int bulls, int cows) {
         var transaction = em.getTransaction();
         transaction.begin();
         try {
-            GameEntity game = getGame(gameId);
+            GameEntity game = checkGameFinished(gameId);
             GameGamerEntity gameGamer = getGameGamer(username, gameId);
+            MoveEntity move = new MoveEntity(gameGamer, bulls, cows, sequence);
+            em.persist(move);
             game.setIsFinished(true);
             em.persist(game);
             gameGamer.setWinner(true);
@@ -170,18 +181,6 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
     public String findSequence(long gameId) {
         GameEntity game = getGame(gameId);
         return game.getSequence();
-    }
-
-    @Override
-    public boolean isGameFinished(long gameId) {
-        GameEntity game = getGame(gameId);
-        return game.isFinished();
-    }
-
-    @Override
-    public boolean isGameStarted(long gameId) {
-        GameEntity game = getGame(gameId);
-        return game.getDateTime() != null;
     }
 
     private GamerEntity getGamer(String username) {
@@ -202,7 +201,7 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
 
     private GameGamerEntity getGameGamer(String username, long gameId) {
         TypedQuery<GameGamerEntity> query = em.createQuery(
-                "select gameGamer from GameGamerEntity gameGamer where game_id = ?1 and gamer_id = ?2",
+                "select gameGamer from GameGamerEntity gameGamer where game.id = ?1 and gamer.username = ?2",
                 GameGamerEntity.class);
         query.setParameter(1, gameId);
         query.setParameter(2, username);
@@ -224,4 +223,13 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
             throw new GamerCannotStartGameException(username, gameId);
         }  
     }
+
+    private GameEntity checkGameFinished(long gameId) {
+        GameEntity game = getGame(gameId);
+        if (game.isFinished()) {
+            throw new GameAlreadyFinishedException(gameId, findWinnerGame(gameId));
+        }
+        return game;
+    }
+
 }

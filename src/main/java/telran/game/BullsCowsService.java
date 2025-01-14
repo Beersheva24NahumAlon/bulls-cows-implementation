@@ -18,5 +18,7 @@ public interface BullsCowsService {
 
     public void startGame(String username, long gameId);
 
+    public List<Long> getListPlaybleGames(String username);
+
     public List<MoveResult> makeMove(String username, long gameId, String sequence);
 }
