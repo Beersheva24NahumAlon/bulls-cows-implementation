@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 @Table(name = "move")
 public class MoveEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     @ManyToOne
     @JoinColumn(name = "game_gamer_id")

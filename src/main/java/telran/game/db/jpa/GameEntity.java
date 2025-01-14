@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 @Table(name = "game")
 public class GameEntity {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
     @Column(name = "date_time")
     private LocalDateTime dateTime;
@@ -37,8 +37,9 @@ public class GameEntity {
         this.dateTime = dateTime;
     }
 
-    public GameEntity(String sequence) {
+    public GameEntity(String sequence, boolean isFinished) {
         this.sequence = sequence;
+        this.isFinished = isFinished;
     }
 
     public String getSequence() {
@@ -50,5 +51,9 @@ public class GameEntity {
     }
 
     public GameEntity() {
+    }
+
+    public LocalDateTime getDateTime() {
+        return dateTime;
     }
 }

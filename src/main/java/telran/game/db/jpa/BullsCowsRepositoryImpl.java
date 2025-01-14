@@ -30,12 +30,12 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
 
     @Override
     public void createGamer(String username, LocalDate birthDate) {
-        if (isGamerExists(username)) {
-            throw new GamerAlreadyExistsException(username);
-        }
         var transaction = em.getTransaction();
         transaction.begin();
         try {
+            if (isGamerExists(username)) {
+                throw new GamerAlreadyExistsException(username);
+            }
             GamerEntity gamer = new GamerEntity(username, birthDate);
             em.persist(gamer);
             transaction.commit();
@@ -50,7 +50,7 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
         var transaction = em.getTransaction();
         transaction.begin();
         try {
-            GameEntity game = new GameEntity(sequence);
+            GameEntity game = new GameEntity(sequence, false);
             em.persist(game);
             transaction.commit();
             return game.getId();
@@ -63,7 +63,7 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
     @Override
     public List<Long> findJoinebleGames(String username) {
         TypedQuery<Long> query = em.createQuery(
-                "select game.id from GameGamerEntity where gamer.username != ?1 and game.dateTime is null",
+                "SELECT id FROM GameEntity WHERE dateTime is null EXCEPT SELECT game.id FROM GameGamerEntity WHERE gamer.username = ?1",
                 Long.class);
         query.setParameter(1, username);
         return query.getResultList();
@@ -71,11 +71,12 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
 
     @Override
     public void createGameGamer(String username, long gameId) {
-        GameEntity game = getGame(gameId);
-        GamerEntity gamer = getGamer(username);
         var transaction = em.getTransaction();
         transaction.begin();
         try {
+            GameEntity game = getGame(gameId);
+            GamerEntity gamer = getGamer(username);
+            checkJoinebleGame(username, gameId);
             GameGamerEntity gameGamer = new GameGamerEntity(game, gamer);
             em.persist(gameGamer);
             transaction.commit();
@@ -94,13 +95,14 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
         return query.getResultList();
     }
 
-    @Override
-    public void setGameDateTime(long gameId) {
-        GameEntity game = getGame(gameId);
+    @Override //start game
+    public void setGameDateTime(String username, long gameId) {
         var transaction = em.getTransaction();
         transaction.begin();
         try {
+            GameEntity game = getGame(gameId);
             LocalDateTime dateTime = LocalDateTime.now();
+            checkStartebleGame(username, gameId);
             game.setDateTime(dateTime);
             em.persist(game);
             transaction.commit();
@@ -112,10 +114,10 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
 
     @Override
     public void createMove(String username, long gameId, String sequence, int bulls, int cows) {
-        GameGamerEntity gameGamer = getGameGamer(username, gameId);
         var transaction = em.getTransaction();
         transaction.begin();
         try {
+            GameGamerEntity gameGamer = getGameGamer(username, gameId);
             MoveEntity move = new MoveEntity(gameGamer, bulls, cows, sequence);
             em.persist(move);
             transaction.commit();
@@ -148,11 +150,11 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
 
     @Override
     public void setWinnerAndFinishGame(String username, long gameId) {
-        GameEntity game = getGame(gameId);
-        GameGamerEntity gameGamer = getGameGamer(username, gameId);
         var transaction = em.getTransaction();
         transaction.begin();
         try {
+            GameEntity game = getGame(gameId);
+            GameGamerEntity gameGamer = getGameGamer(username, gameId);
             game.setIsFinished(true);
             em.persist(game);
             gameGamer.setWinner(true);
@@ -174,6 +176,12 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
     public boolean isGameFinished(long gameId) {
         GameEntity game = getGame(gameId);
         return game.isFinished();
+    }
+
+    @Override
+    public boolean isGameStarted(long gameId) {
+        GameEntity game = getGame(gameId);
+        return game.getDateTime() != null;
     }
 
     private GamerEntity getGamer(String username) {
@@ -203,5 +211,17 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
             throw new GamerNotInGameException(username, gameId);
         }
         return res.get(0);
+    }
+
+    private void checkJoinebleGame(String username, long gameId) { 
+        if (!findJoinebleGames(username).contains(gameId)) {
+            throw new GamerCannotJoinToGameException(username, gameId);
+        }  
+    }
+
+    private void checkStartebleGame(String username, long gameId) { 
+        if (!findStartebleGames(username).contains(gameId)) {
+            throw new GamerCannotStartGameException(username, gameId);
+        }  
     }
 }

@@ -17,7 +17,7 @@ public interface BullsCowsRepository {
 
     public List<Long> findStartebleGames(String username);
 
-    public void setGameDateTime(long gameId); //start game
+    public void setGameDateTime(String username, long gameId); //start game
 
     public void createMove(String username, long gameId, String sequence, int bulls, int cows);
 
@@ -30,4 +30,6 @@ public interface BullsCowsRepository {
     public String findSequence(long gameId);
 
     public boolean isGameFinished(long gameId);
+
+    public boolean isGameStarted(long gameId);
 }

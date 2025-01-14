@@ -24,7 +24,7 @@ public class BullsCowsServiceTest {
 
     @Test
     void getListJoinebleGamesTest() {
-        System.out.println(service.getListJoinebleGames("gamer1").toString());
+        System.out.println(service.getListJoinebleGames("nahum").toString());
         
     }
 

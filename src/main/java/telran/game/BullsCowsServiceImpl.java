@@ -11,7 +11,6 @@ public class BullsCowsServiceImpl implements BullsCowsService {
     private static final long N_DIGITS = 4;
 
     BullsCowsRepository repo = new BullsCowsRepositoryImpl();
-    String username = "";
 
     @Override
     public void register(String username, LocalDate birthdate) {
@@ -23,7 +22,6 @@ public class BullsCowsServiceImpl implements BullsCowsService {
         if (!repo.isGamerExists(username)) {
             throw new GamerNotFoundException(username);
         }
-        this.username = username;
     }
 
     @Override
@@ -38,26 +36,31 @@ public class BullsCowsServiceImpl implements BullsCowsService {
 
     @Override
     public List<Long> getListJoinebleGames(String username) {
+        checkLogin(username);
         return repo.findJoinebleGames(username);
     }
 
     @Override
     public void joinToGame(String username, long gameId) {
+        checkLogin(username);
         repo.createGameGamer(username, gameId);
     }
 
     @Override
     public List<Long> getListStartebleGames(String username) {
+        checkLogin(username);
         return repo.findStartebleGames(username);
     }
 
     @Override
     public void startGame(String username, long gameId) {
-        repo.setGameDateTime(gameId);
+        checkLogin(username);
+        repo.setGameDateTime(username, gameId);
     }
 
     @Override
     public List<MoveResult> makeMove(String username, long gameId, String sequence) {
+        checkLogin(username);
         if (repo.isGameFinished(gameId)) {
             String winner = repo.findWinnerGame(gameId);
             throw new GameAlreadyFinishedException(gameId, winner);
@@ -85,4 +88,9 @@ public class BullsCowsServiceImpl implements BullsCowsService {
         return new MoveResult(sequence, bulls, cows);
     }
 
+    private void checkLogin(String username) {
+        if (username.equals("anonimus")) {
+            throw new GamerIsNotLoginException();
+        }
+    }
 }
