@@ -98,7 +98,7 @@ public class BullsCowsRepositoryImpl implements BullsCowsRepository {
     @Override
     public List<Long> findPlaybleGames(String username) {
         TypedQuery<Long> query = em.createQuery(
-                "select game.id from GameGamerEntity where gamer.username = ?1 and game.dateTime is not null",
+                "select game.id from GameGamerEntity where gamer.username = ?1 and game.dateTime is not null and not game.isFinished",
                 Long.class);
         query.setParameter(1, username);
         return query.getResultList();
